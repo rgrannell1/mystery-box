@@ -61,7 +61,8 @@ class Multipass:
   @classmethod
   def launch(cls, name: str, config_path: Path):
     subprocess.run(['multipass', 'launch', '-n', name,
-                   '--cloud-init', config_path, 'ubuntu'])
+                   '--cloud-init', config_path,
+                   '-d', '30G', '-m', '3G', 'ubuntu'])
 
 class DevBox:
   name: str

@@ -25,7 +25,8 @@ def ansible_config(name: str, ip: str) -> str:
     'smem',
     'upower',
     'zsh',
-    'yadm'
+    'yadm',
+    'zsh-antigen'
   ]] + [
     {
       'name': 'Set ZSH as a default shell',
@@ -35,7 +36,7 @@ def ansible_config(name: str, ip: str) -> str:
       }
     },
     {
-      'name': 'clone fzf',
+      'name': 'Clone Fzf',
       'git': {
         'repo': 'https://github.com/junegunn/fzf.git',
         'dest': f'/home/{user}/.fzf',
@@ -46,6 +47,56 @@ def ansible_config(name: str, ip: str) -> str:
     {
       'name': 'Install fzf',
       'shell': f'yes | /home/{user}/.fzf/install'
+    },
+    {
+      'name': 'Copy SSH Private Key',
+      'copy': {
+        'src': '~/.ssh/id_rsa',
+        'dest': f'/home/{user}/.ssh/id_rsa',
+        'mode': '0600'
+      }
+    },
+    {
+      'name': 'Set SSH Configuration',
+      'copy': {
+        'content': 'Host github.com\n    StrictHostKeyChecking no\n',
+        'dest': f'/etc/ssh/sshd_config',
+        'mode': '0644'
+      }
+    },
+    {
+      'file': {
+        'path': f'/home/{user}/.ssh',
+        'mode': '0700'
+      }
+    },
+    {
+      'shell': f'ssh-keyscan github.com >> /home/{user}//known_hosts'
+    },
+    {
+      "name": "Clone dotfiles",
+      "shell": f'eval "$(ssh-agent -s)" && ssh-add /home/{user}/.ssh/id_rsa && yadm clone -f git@github.com:rgrannell1/dotfiles.git',
+      'become_user': user
+    },
+    {
+      'name': 'Install Go',
+      'community.general.snap': {
+        'name': 'go',
+        'classic': 'yes'
+      }
+    },
+    {
+      'name': 'Clone Gecko',
+      'git': {
+        'repo': 'https://github.com/rgrannell1/gecko.git',
+        'dest': f'/home/{user}/gecko',
+        'clone': 'yes'
+      },
+      'become_user': user
+    },
+    {
+      'name': 'Install Gecko',
+      'shell': f'cd /home/{user}/gecko && go build && cp /home/{user}/gecko/gecko /usr/bin/gecko',
     }
   ]
 
