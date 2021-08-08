@@ -1,3 +1,4 @@
 .env
 cloud-init.yaml
 src/__pycache__/
+build/

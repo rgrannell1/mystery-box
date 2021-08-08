@@ -12,11 +12,12 @@ Description:
 import json
 import logging
 import subprocess
-from typing import Optional
 from docopt import docopt
 from pathlib import Path
 from dotenv import load_dotenv
-from cloud_init import read_var, write_cloud_init
+from cloud_init import write_cloud_init
+from utils import read_var
+from ansible import write_ansible_config
 
 logging.basicConfig(level=logging.INFO)
 
@@ -80,6 +81,10 @@ class DevBox:
 
     Multipass.launch(self.name, config_path)
 
+  def configure(self, ip: str) -> None:
+    """Configure the Multipass VM via Ansible."""
+    write_ansible_config(self.name, ip)
+
   def up(self) -> None:
     info = self.info()
 
@@ -93,6 +98,8 @@ class DevBox:
 
     ipv4 = info['ipv4'][0]
     logging.info(f'📦 {self.name} up at {ipv4}')
+
+    self.configure(ipv4)
 
 def box_up():
   """Bring an instance up"""

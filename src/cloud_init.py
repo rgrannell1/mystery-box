@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 
-import os
 import yaml
 from dotenv import load_dotenv
 from pathlib import Path
+from utils import read_var
 
 load_dotenv()
-
-def read_var (name: str) -> str:
-  """Read environmental variables and assert they are present."""
-
-  value = os.environ.get(name)
-
-  if not value:
-    raise Exception(f"name '{name}' not available.")
-
-  return value
 
 def read_public_keys(fpaths: list[Path]) -> list[str]:
   """Read public SSH keys from a provided path"""
@@ -33,11 +23,12 @@ def cloud_init() -> str:
   """Generate cloud-init file"""
 
   SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
+  USER = read_var('USER')
 
   return yaml.dump({
     'users': [
       {
-        'name': 'rg',
+        'name': USER,
         'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
       }
     ],
