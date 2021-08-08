@@ -92,7 +92,7 @@ class DevBox:
       return
 
     ipv4 = info['ipv4'][0]
-    logging.info(f'📦 {self.name} up at {ipv4}!')
+    logging.info(f'📦 {self.name} up at {ipv4}')
 
 def box_up():
   """Bring an instance up"""

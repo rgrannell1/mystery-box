@@ -40,6 +40,10 @@ def cloud_init() -> str:
         'name': 'rg',
         'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
       }
+    ],
+    'package_upgrade': True,
+    'packages': [
+      'git'
     ]
   })
 
