@@ -53,7 +53,8 @@ def ansible_config(name: str, ip: str) -> str:
       'copy': {
         'src': '~/.ssh/id_rsa',
         'dest': f'/home/{user}/.ssh/id_rsa',
-        'mode': '0600'
+        'mode': '0600',
+        'owner': user
       }
     },
     {
@@ -67,16 +68,26 @@ def ansible_config(name: str, ip: str) -> str:
     {
       'file': {
         'path': f'/home/{user}/.ssh',
-        'mode': '0700'
+        'mode': '0700',
+        'owner': user
       }
     },
     {
-      'shell': f'ssh-keyscan github.com >> /home/{user}//known_hosts'
+      'name': 'Save Github to known hosts',
+      'shell': f'ssh-keyscan github.com >> /etc/ssh/ssh_known_hosts'
+    },
+    {
+      "name": "Clone Antigen",
+      "shell": f"curl -L git.io/antigen > /home/{user}/antigen.zsh"
+    },
+    {
+      'name': 'Install Zoxide',
+      'shell': 'wget "http://ftp.uk.debian.org/debian/pool/main/r/rust-zoxide/zoxide_0.4.3-2+b1_amd64.deb" && dpkg -i zoxide_0.4.3-2+b1_amd64.deb'
     },
     {
       "name": "Clone dotfiles",
       "shell": f'eval "$(ssh-agent -s)" && ssh-add /home/{user}/.ssh/id_rsa && yadm clone -f git@github.com:rgrannell1/dotfiles.git',
-      'become_user': user
+      'remote_user': user
     },
     {
       'name': 'Install Go',
