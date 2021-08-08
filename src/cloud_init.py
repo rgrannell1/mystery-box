@@ -28,6 +28,10 @@ def cloud_init() -> str:
   return yaml.dump({
     'users': [
       {
+        'name': 'root',
+        'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
+      },
+      {
         'name': USER,
         'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
       }

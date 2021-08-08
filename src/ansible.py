@@ -14,24 +14,47 @@ def apt_install (name: str):
 def ansible_config(name: str, ip: str) -> str:
   user = read_var('USER')
 
+  tasks = [apt_install(pkg) for pkg in [
+    'build-essential',
+    'libev-dev',
+    'libpcre3-dev',
+    'asciinema',
+    'bpfcc-tools',
+    'fzf',
+    'python3-pip',
+    'smem',
+    'upower',
+    'zsh',
+    'yadm'
+  ]] + [
+    {
+      'name': 'Set ZSH as a default shell',
+      'user': {
+        'name': user,
+        'shell': '/bin/zsh'
+      }
+    },
+    {
+      'name': 'clone fzf',
+      'git': {
+        'repo': 'https://github.com/junegunn/fzf.git',
+        'dest': f'/home/{user}/.fzf',
+        'clone': 'yes'
+      },
+      'become_user': user
+    },
+    {
+      'name': 'Install fzf',
+      'shell': f'yes | /home/{user}/.fzf/install'
+    }
+  ]
+
   return yaml.dump([
     {
       'name': f'Configure {name}',
       'hosts': ip,
-      'remote_user': user,
-      'tasks': [] + [apt_install(pkg) for pkg in [
-        'build-essential',
-        'libev-dev',
-        'libpcre3-dev',
-        'asciinema',
-        'bpfcc-tools',
-        'fzf',
-        'python-pip',
-        'python-pip3',
-        'sensors',
-        'smem',
-        'upower'
-      ]]
+      'remote_user': 'root',
+      'tasks': tasks
     }
   ])
 
