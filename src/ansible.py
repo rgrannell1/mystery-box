@@ -3,6 +3,14 @@ import yaml
 from pathlib import Path
 from utils import read_var
 
+def apt_install (name: str):
+  return {
+    'name': f'Install apt-package {name}',
+    'apt': {
+      'name': name
+    }
+  }
+
 def ansible_config(name: str, ip: str) -> str:
   user = read_var('USER')
 
@@ -11,17 +19,21 @@ def ansible_config(name: str, ip: str) -> str:
       'name': f'Configure {name}',
       'hosts': ip,
       'remote_user': user,
-      'tasks': [
-        {
-          'name': 'test',
-          'debug': {
-            'msg': 'echo'
-          }
-        }
-      ]
+      'tasks': [] + [apt_install(pkg) for pkg in [
+        'build-essential',
+        'libev-dev',
+        'libpcre3-dev',
+        'asciinema',
+        'bpfcc-tools',
+        'fzf',
+        'python-pip',
+        'python-pip3',
+        'sensors',
+        'smem',
+        'upower'
+      ]]
     }
   ])
-
 
 def inventory_config(ip: str) -> str:
   return yaml.dump({

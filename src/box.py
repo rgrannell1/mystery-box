@@ -76,14 +76,16 @@ class DevBox:
     config_path = Path(read_var('CONFIG_PATH'))
     write_cloud_init(config_path)
 
-    subprocess.run(['multipass', 'launch', '-n', 'devbox',
-                  '--cloud-init', config_path, 'ubuntu'])
-
     Multipass.launch(self.name, config_path)
 
   def configure(self, ip: str) -> None:
     """Configure the Multipass VM via Ansible."""
     write_ansible_config(self.name, ip)
+
+    ansible_path = read_var('ANSIBLE_PATH')
+    inventory_path = read_var('INVENTORY_PATH')
+
+    subprocess.run(['ansible-playbook', '-i', inventory_path, ansible_path])
 
   def up(self) -> None:
     info = self.info()
