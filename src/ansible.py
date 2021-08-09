@@ -9,29 +9,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
-def apt_install(name: str) -> dict:
-    return {
-        'name': f'Install apt-package {name}',
-        'apt': {
-            'name': name
-        }
-    }
-
-
-def snap_install(name: str, classic = False) -> dict:
-    return {
-        'name': f'Install snap-package {name}',
-        'snap': {
-            'name': name,
-            'classic': classic
-        }
-    }
-
-
-def classic_snap_install(name: str):
-  return snap_install(name, True)
-
 APT_PACKAGES = [
     'build-essential',
     'libev-dev',
@@ -47,11 +24,42 @@ APT_PACKAGES = [
     'zsh-antigen'
 ]
 
+CLASSIC_SNAP_PACKAGES = [
+    'htop',
+    'bashtop',
+    'go',
+    'kale',
+    'kohl',
+    'rpgen',
+    'polonium',
+    'duf-utility',
+    'gron',
+    'dog',
+    'youtube-dl'
+]
+
+def snap_install(name: str, classic = False) -> dict:
+    return {
+        'name': f'Install snap-package {name}',
+        'snap': {
+            'name': name,
+            'classic': classic
+        }
+    }
+
+
 user = read_var('USER')
 
 
 def setup_apt_packages() -> list[dict]:
-    return [apt_install(pkg) for pkg in APT_PACKAGES]
+    return [{
+        'name': 'Install apt packages',
+        'apt': {
+            'pkg': APT_PACKAGES,
+            'state': 'latest',
+            'update_cache': True
+        }
+    }]
 
 
 def setup_carp() -> list[dict]:
@@ -192,21 +200,14 @@ def set_user_shell() -> list[dict]:
     }]
 
 
-CLASSIC_SNAP_PACKAGES = [
-    'bashtop',
-    'go',
-    'hotline',
-    'kale',
-    'kohl',
-    'rpgen',
-    'polonium',
-    'duf-utility',
-    'gron'
-]
-
-
 def setup_snap_packages() -> list[dict]:
-    return [classic_snap_install(name) for name in CLASSIC_SNAP_PACKAGES]
+    return [{
+        'name': f'Install snap-packages',
+        'snap': {
+            'name': CLASSIC_SNAP_PACKAGES,
+            'classic': True
+        }
+    }]
 
 
 def disable_motd() -> list[dict]:
@@ -219,15 +220,16 @@ def test_reboot() -> list[dict]:
     return [{
         'name': 'Test that rebooted instances come back up',
         'reboot': {
-            'reboot_timeout': 60
+            'reboot_timeout': 120
         }
     }]
 
 
 def test_carp() -> list[dict]:
     return [{
-        'name': 'Test that rebooted instances come back up',
-        'shell': f'carp /home/{user}/carpfile.py --group devbox'
+        'name': 'Test that carp dependencies are met',
+        'shell': f'carp /home/{user}/carpfile.py --group devbox',
+        'remote_user': user
     }]
 
 
