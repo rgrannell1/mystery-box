@@ -7,52 +7,57 @@ from utils import read_var
 
 load_dotenv()
 
+
 def read_public_keys(fpaths: list[Path]) -> list[str]:
-  """Read public SSH keys from a provided path"""
+    """Read public SSH keys from a provided path"""
 
-  results = []
+    results = []
 
-  for fpath in fpaths:
-    with open(fpath) as conn:
-      content = conn.read()
-      results.append(content)
+    for fpath in fpaths:
+        with open(fpath) as conn:
+            content = conn.read()
+            results.append(content)
 
-  return results
+    return results
+
 
 def cloud_init() -> str:
-  """Generate cloud-init file"""
+    """Generate cloud-init file"""
 
-  SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
-  USER = read_var('USER')
+    SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
+    USER = read_var('USER')
 
-  return yaml.dump({
-    'users': [
-      {
-        'name': 'root',
-        'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
-      },
-      {
-        'name': USER,
-        'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
-      }
-    ],
-    'package_upgrade': True,
-    'packages': [
-      'git'
-    ]
-  })
+    return yaml.dump({
+        'users': [
+            {
+                'name': 'root',
+                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
+            },
+            {
+                'name': USER,
+                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
+            }
+        ],
+        'package_upgrade': True,
+        'packages': [
+            'git'
+        ]
+    })
+
 
 def write_cloud_init(fpath: Path):
-  """Write cloud-init configuration to a temporary file"""
+    """Write cloud-init configuration to a temporary file"""
 
-  with open(fpath, 'w') as conn:
-    conn.write(cloud_init())
+    with open(fpath, 'w') as conn:
+        conn.write(cloud_init())
+
 
 def main():
-  CONFIG_PATH = Path(read_var('CONFIG_PATH'))
+    CONFIG_PATH = Path(read_var('CONFIG_PATH'))
 
-  write_cloud_init(CONFIG_PATH)
-  print(CONFIG_PATH)
+    write_cloud_init(CONFIG_PATH)
+    print(CONFIG_PATH)
+
 
 if __name__ == '__main__':
-  main()
+    main()
