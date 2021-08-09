@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-def apt_install(name: str):
+def apt_install(name: str) -> dict:
     return {
         'name': f'Install apt-package {name}',
         'apt': {
@@ -18,6 +18,19 @@ def apt_install(name: str):
         }
     }
 
+
+def snap_install(name: str, classic = False) -> dict:
+    return {
+        'name': f'Install snap-package {name}',
+        'snap': {
+            'name': name,
+            'classic': classic
+        }
+    }
+
+
+def classic_snap_install(name: str):
+  return snap_install(name, True)
 
 APT_PACKAGES = [
     'build-essential',
@@ -161,16 +174,6 @@ def setup_env_locale() -> list[dict]:
     ]
 
 
-def setup_golang() -> list[dict]:
-    return [{
-        'name': 'Install Go',
-        'community.general.snap': {
-            'name': 'go',
-            'classic': 'yes'
-        }
-    }]
-
-
 def setup_nodejs() -> list[dict]:
     return [{
         'name': 'Add NVM',
@@ -189,14 +192,21 @@ def set_user_shell() -> list[dict]:
     }]
 
 
-def setup_bashtop() -> list[dict]:
-    return [{
-        'name': 'Install Bashtop',
-        'community.general.snap': {
-            'name': 'bashtop',
-            'classic': 'yes'
-        }
-    }]
+CLASSIC_SNAP_PACKAGES = [
+    'bashtop',
+    'go',
+    'hotline',
+    'kale',
+    'kohl',
+    'rpgen',
+    'polonium',
+    'duf-utility',
+    'gron'
+]
+
+
+def setup_snap_packages() -> list[dict]:
+    return [classic_snap_install(name) for name in CLASSIC_SNAP_PACKAGES]
 
 
 def disable_motd() -> list[dict]:
@@ -213,6 +223,14 @@ def test_reboot() -> list[dict]:
         }
     }]
 
+
+def test_carp() -> list[dict]:
+    return [{
+        'name': 'Test that rebooted instances come back up',
+        'shell': f'carp /home/{user}/carpfile.py --group devbox'
+    }]
+
+
 def ansible_config(name: str, ip: str) -> str:
     setup_tasks = (
         setup_apt_packages() +
@@ -222,16 +240,15 @@ def ansible_config(name: str, ip: str) -> str:
         setup_antigen() +
         setup_zoxide() +
         setup_dotfiles() +
-        setup_golang() +
         setup_nodejs() +
-        setup_bashtop() +
+        setup_snap_packages() +
         disable_motd() +
         setup_env_locale() +
         setup_gecko() +
         setup_carp())
 
     test_tasks = (
-        test_reboot()
+        test_reboot() + test_carp()
     )
 
     # -- add tests
