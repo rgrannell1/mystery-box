@@ -4,9 +4,15 @@
 
 Usage:
   box up
+  box in [--user <user>]
+  box start
+  box stop
 
 Description:
-   Run
+  Set up a
+
+Options:
+  --user <user>    the user to log in as. Either root, or the user configured in .env
 """
 
 import logging
@@ -23,9 +29,16 @@ load_dotenv()
 def main():
     """Call the correct CLI command"""
 
+    vm = DevBox('devbox')
+
     if args['up']:
-        vm = DevBox('devbox')
         vm.up(AnsibleConfiguration)
+    elif args['in']:
+        vm.into(args['--user'])
+    elif args['stop']:
+        vm.stop()
+    elif args['start']:
+        vm.start()
 
 
 if __name__ == '__main__':

@@ -35,7 +35,9 @@ def cloud_init() -> str:
             },
             {
                 'name': USER,
-                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
+                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH]),
+                'groups': 'sudo',
+                'sudo': ['ALL=(ALL) NOPASSWD: ALL']
             }
         ],
         'package_upgrade': True,

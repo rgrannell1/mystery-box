@@ -50,3 +50,17 @@ class Multipass:
         subprocess.run(['multipass', 'launch', '-n', name,
                        '--cloud-init', config_path,
                         '-d', disk, '-m', ram, image])
+
+    @classmethod
+    def stop(cls, name: str):
+        subprocess.run(['multipass', 'stop', name])
+
+    @classmethod
+    def start(cls, name: str):
+        for vm in Multipass.list():
+            if vm['name'] == name:
+                if vm['state'] == 'Stopped':
+                    subprocess.run(['multipass', 'start', name])
+            return
+
+        raise Exception(f'vm {name} does not exist')

@@ -1,4 +1,6 @@
 
+import time
+import subprocess
 import logging
 from pathlib import Path
 from cloud_init import write_cloud_init
@@ -31,6 +33,7 @@ class DevBox:
         conf.run()
 
     def up(self, configurator) -> None:
+        start_time = time.monotonic()
         info = Multipass.info(self.name)
 
         if not info or info['state'] != 'Running':
@@ -42,6 +45,32 @@ class DevBox:
             return
 
         ipv4 = info['ipv4'][0]
-        logging.info(f'📦 {self.name} up at {ipv4}')
+        seconds_elapsed = round(time.monotonic() - start_time)
 
+        logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
+
+        logging.info(f'📦 configuring {self.name}...')
         self.configure(ipv4, configurator)
+
+    def into(self, user: str) -> None:
+        """SSH into the devbox"""
+
+        user = user if user else read_var('USER')
+
+        # add timeout
+        Multipass.start(self.name)
+        info = Multipass.info(self.name)
+        if not info:
+            logging.info(f'📦 {self.name}')
+            return
+
+        # todo polling in...
+
+        ipv4 = info['ipv4'][0]
+        subprocess.run(['ssh', f'{user}@{ipv4}'])
+
+    def stop(self):
+        Multipass.stop(self.name)
+
+    def start(self):
+        Multipass.start(self.name)
