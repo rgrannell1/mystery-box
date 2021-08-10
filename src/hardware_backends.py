@@ -11,7 +11,7 @@ from ssh import SSH
 from utils import read_var
 from multipass import Multipass
 from abc import ABC, abstractmethod
-from software_backends import VMConfiguratorProvisioner, VMConfigurator
+from software_backends import VMConfiguratorProvisioner
 
 
 class DevBox(ABC):
