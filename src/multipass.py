@@ -1,9 +1,11 @@
 
 import json
 import subprocess
+from utils import logging
 
 
 class Multipass:
+    """Interact with Multipass."""
     @classmethod
     def list(cls):
         output = subprocess.check_output(
@@ -47,9 +49,19 @@ class Multipass:
         disk = launchArgs['disk']
         image = launchArgs['image']
 
-        subprocess.run(['multipass', 'launch', '-n', name,
-                       '--cloud-init', config_path,
-                        '-d', disk, '-m', ram, image])
+        try:
+            subprocess.check_output(['multipass', 'launch', '-n', name,
+                                     '--cloud-init', config_path,
+                                     '-d', disk, '-m', ram, image], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as err:
+            msg = str(err.output)
+
+            if 'Remote "" is unknown or unreachable.' in msg:
+                logging.error(
+                    'Cannot launch due to known issue with Multipass. Try running: sudo snap restart multipass')
+                exit(1)
+            else:
+                raise
 
     @classmethod
     def stop(cls, name: str):

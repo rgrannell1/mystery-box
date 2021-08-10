@@ -1,4 +1,5 @@
 
+import logging
 import os
 
 
@@ -11,3 +12,6 @@ def read_var(name: str) -> str:
         raise Exception(f"name '{name}' not available.")
 
     return value
+
+
+logging.basicConfig(level=logging.INFO)

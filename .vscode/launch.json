@@ -5,7 +5,7 @@
       "name": "Box Up",
       "type": "python",
       "request": "launch",
-      "program": "src/box.py",
+      "program": "src/cli.py",
       "console": "integratedTerminal",
       "args": ["up"]
     }

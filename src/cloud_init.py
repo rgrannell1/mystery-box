@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from abc import ABC, abstractmethod
 import yaml
 from dotenv import load_dotenv
 from pathlib import Path
@@ -8,58 +9,55 @@ from utils import read_var
 load_dotenv()
 
 
-def read_public_keys(fpaths: list[Path]) -> list[str]:
-    """Read public SSH keys from a provided path"""
+class CloudInit(ABC):
 
-    results = []
+    @abstractmethod
+    def create_config(self) -> dict:
+        pass
 
-    for fpath in fpaths:
-        with open(fpath) as conn:
-            content = conn.read()
-            results.append(content)
-
-    return results
+    @abstractmethod
+    def write(self, fpath: Path) -> None:
+        pass
 
 
-def cloud_init() -> str:
-    """Generate cloud-init file"""
+class MinimalCloudInit:
+    """Set up minimal cloud-init configuration that will allow SSH connections
+    into an instance, and configures sone user"""
 
-    SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
-    USER = read_var('USER')
+    def read_public_keys(self, fpaths: list[Path]) -> list[str]:
+        results = []
 
-    return yaml.dump({
-        'users': [
-            {
-                'name': 'root',
-                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH])
-            },
-            {
-                'name': USER,
-                'ssh-authorized-keys': read_public_keys([SSH_PUBLIC_PATH]),
-                'groups': 'sudo',
-                'sudo': ['ALL=(ALL) NOPASSWD: ALL']
-            }
-        ],
-        'package_upgrade': True,
-        'packages': [
-            'git'
-        ]
-    })
+        for fpath in fpaths:
+            with open(fpath) as conn:
+                content = conn.read()
+                results.append(content)
 
+        return results
 
-def write_cloud_init(fpath: Path):
-    """Write cloud-init configuration to a temporary file"""
+    def create_config(self):
+        USER = read_var('USER')
+        SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
 
-    with open(fpath, 'w') as conn:
-        conn.write(cloud_init())
+        ssh_keys = self.read_public_keys([SSH_PUBLIC_PATH])
 
+        return {
+            'users': [
+                {
+                    'name': 'root',
+                    'ssh-authorized-keys': ssh_keys
+                },
+                {
+                    'name': USER,
+                    'ssh-authorized-keys': ssh_keys,
+                    'groups': 'sudo',
+                    'sudo': ['ALL=(ALL) NOPASSWD: ALL']
+                }
+            ]
+        }
 
-def main():
-    CONFIG_PATH = Path(read_var('CONFIG_PATH'))
+    def write(self, fpath: Path):
+        """Write cloud-init configuration to a temporary file"""
 
-    write_cloud_init(CONFIG_PATH)
-    print(CONFIG_PATH)
-
-
-if __name__ == '__main__':
-    main()
+        with open(fpath, 'w') as conn:
+            config = self.create_config()
+            conn.write(yaml.dump(config))
