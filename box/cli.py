@@ -33,13 +33,15 @@ Options:
 
 from docopt import docopt
 from dotenv import load_dotenv
-from hardware_backends import DevBoxProvisioner
+from .hardware_backends import DevBoxProvisioner
 
 load_dotenv()
 
 
-def main(args):
+def main():
     """Call the correct CLI command"""
+
+    args = docopt(__doc__, version='Box 1.0')
 
     vm = DevBoxProvisioner.create('multipass', 'devbox')
 
@@ -68,5 +70,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version='Box 1.0')
-    main(args)
+    main()

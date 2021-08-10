@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import yaml
 from dotenv import load_dotenv
 from pathlib import Path
-from utils import read_var
+from .utils import read_var
 
 load_dotenv()
 

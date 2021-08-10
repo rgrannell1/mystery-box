@@ -1,7 +1,7 @@
 
 import json
 import subprocess
-from utils import logging
+from .utils import logging
 
 
 class Multipass:

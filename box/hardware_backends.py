@@ -3,15 +3,15 @@ import os
 import time
 import yaml
 from yaml.parser import ParserError
-from utils import logging
+from .utils import logging
 from pathlib import Path
 from typing import Optional
-from cloud_init import MinimalCloudInit
-from ssh import SSH
-from utils import read_var
-from multipass import Multipass
+from .cloud_init import MinimalCloudInit
+from .ssh import SSH
+from .utils import read_var
+from .multipass import Multipass
 from abc import ABC, abstractmethod
-from software_backends import VMConfiguratorProvisioner
+from .software_backends import VMConfiguratorProvisioner
 
 
 class DevBox(ABC):

@@ -4,8 +4,8 @@ import subprocess
 import time
 import yaml
 from pathlib import Path
-from utils import read_var
-from utils import logging
+from .utils import read_var
+from .utils import logging
 from abc import ABC, abstractmethod
 
 
