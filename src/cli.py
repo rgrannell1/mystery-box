@@ -3,7 +3,8 @@
 """Mystery-Box: The Box! The Box!
 
 Usage:
-  box up [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
+  box up [--config <str>]
+  box launch [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
   box in [--user <user>]
   box configure [--playbook <str>]
   box test
@@ -21,6 +22,7 @@ Description:
   By default, `box` provisions a multipass VM via cloud-init and Ansible.
 
 Options:
+  --config <str>       the path to a box configuration file
   --user <user>        the user to log in as. Either root, or the user configured in .env.
   --memory <memory>    the RAM memory to provision the instances with. [default: 3G]
   --disk <disk>        the disk-space to provision the instances with. [default: 30G]
@@ -43,6 +45,12 @@ def main(args):
 
     if args['up']:
         vm.up({
+            'disk': args['--disk'],
+            'memory': args['--memory'],
+            'playbook': args['--playbook']
+        })
+    elif args['launch']:
+        vm.launch({
             'disk': args['--disk'],
             'memory': args['--memory'],
             'playbook': args['--playbook']
