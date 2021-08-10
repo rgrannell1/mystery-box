@@ -6,9 +6,21 @@ Construct a developer environment in one command.
 ## Usage:
 
 ```bash
-box up [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
+box up 
+box launch
+[--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
 box in [--user <user>]
 box stop
+```
+
+## Description:
+
+`box up` reads configuration from `box.yaml` in the current directory; `box launch` receives similar arguments from cli (since a file-based interface is not always ideal)
+
+```yaml
+memory: 3G
+disk: 30G
+playbook: '/home/user/bootstrap.yaml'
 ```
 
 ## License
