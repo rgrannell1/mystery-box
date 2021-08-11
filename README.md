@@ -23,8 +23,9 @@ ssh_public_path: /home/user/.ssh/id_rsa.pub
 memory: 3G
 disk: 30G
 playbook: '/home/user/bootstrap.yaml'
-
 ```
+
+it uses Multipass to provision a VM instance, and Ansible to configure instance software.
 
 ## License
 
