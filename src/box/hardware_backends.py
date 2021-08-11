@@ -27,7 +27,7 @@ class DevBox(ABC):
         pass
 
     @abstractmethod
-    def into(self, user: str) -> None:
+    def into(self, opts: dict) -> None:
         pass
 
     @abstractmethod
@@ -149,8 +149,12 @@ class DevBoxMultipass(DevBox):
 
         self.configure(opts['playbook'])
 
-    def into(self, user: str) -> None:
+    def into(self, opts: dict) -> None:
         """SSH into the devbox"""
+
+        cfg = self.load_config(opts.get('config'))
+
+        user = opts['user'] if opts.get('user') else cfg['user']
 
         Multipass.start(self.name)
         ipv4 = self.ip()

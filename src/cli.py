@@ -5,7 +5,7 @@
 Usage:
   box up [--config <str>]
   box launch [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
-  box in [--user <user>]
+  box in [--user <user>] [--config <str>]
   box configure [--playbook <str>]
   box test
   box start
@@ -55,7 +55,10 @@ def main():
             'playbook': args['--playbook']
         })
     elif args['in']:
-        vm.into(args['--user'])
+        vm.into({
+            'user': args['--user'],
+            'config': args['--config']
+        })
     elif args['stop']:
         vm.stop()
     elif args['start']:
