@@ -42,26 +42,33 @@ class Multipass:
         return info['info'][name]
 
     @classmethod
-    def launch(cls, launchArgs: dict):
-        name = launchArgs['name']
-        config_path = launchArgs['config_path']
-        ram = launchArgs['ram']
-        disk = launchArgs['disk']
-        image = launchArgs['image']
+    def launch(cls, opts: dict):
+        name = opts['name']
+        config = opts['config']
+        ram = opts['ram']
+        disk = opts['disk']
+        image = opts['image']
 
         try:
             subprocess.check_output(['multipass', 'launch', '-n', name,
-                                     '--cloud-init', config_path,
-                                     '-d', disk, '-m', ram, image], stderr=subprocess.STDOUT)
+                                     '--cloud-init', '-',
+                                     '-d', disk, '-m', ram, image], stderr=subprocess.STDOUT,
+                                    input=config.encode())
         except subprocess.CalledProcessError as err:
-            msg = str(err.output)
+            msg = err.output.decode('utf8')
 
             if 'Remote "" is unknown or unreachable.' in msg:
                 logging.error(
                     'Cannot launch due to known issue with Multipass. Try running: sudo snap restart multipass')
                 exit(1)
+            elif "cannot connect to the multipass socket" in msg:
+                logging.error(
+                    'Cannot connect to multipass. Try running: sudo snap restart multipass')
+                exit(1)
             else:
-                raise
+                logging.error(msg)
+                exit(1)
+
 
     @classmethod
     def stop(cls, name: str):

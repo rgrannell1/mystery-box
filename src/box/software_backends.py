@@ -1,10 +1,10 @@
 
 from abc import abstractmethod
+from pathlib import Path
 import subprocess
+import tempfile
 import time
 import yaml
-from pathlib import Path
-from .utils import read_var
 from .utils import logging
 from abc import ABC, abstractmethod
 
@@ -45,24 +45,21 @@ class AnsibleConfiguration(VMConfigurator):
         raise NotImplementedError(
             'no default ansible configuration, extend and provide your own')
 
-    def generate(self, playbook_path: str):
-        inventory_path = Path(read_var('INVENTORY_PATH'))
-
-        with open(inventory_path, 'w') as conn:
-            conn.write(inventory_config(self.ip))
-
-        return inventory_path, playbook_path
-
     def run(self) -> None:
         start_time = time.monotonic()
 
-        inventory_path, playbook_path = self.generate(self.playbook_path)
-        subprocess.run(['ansible-playbook', '-i',
-                       inventory_path, playbook_path])
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            inventory_path = Path(tmp.name)
 
-        seconds_elapsed = round(time.monotonic() - start_time)
-        logging.info(
-            f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
+            with open(inventory_path, 'w') as conn:
+                conn.write(inventory_config(self.ip))
+
+            subprocess.run(['ansible-playbook', '-i',
+                            inventory_path, self.playbook_path])
+
+            seconds_elapsed = round(time.monotonic() - start_time)
+            logging.info(
+                f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
 
 
 class VMConfiguratorProvisioner():

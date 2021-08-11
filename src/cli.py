@@ -32,10 +32,7 @@ Options:
 """
 
 from docopt import docopt
-from dotenv import load_dotenv
-from .hardware_backends import DevBoxProvisioner
-
-load_dotenv()
+from box.hardware_backends import DevBoxProvisioner
 
 
 def main():

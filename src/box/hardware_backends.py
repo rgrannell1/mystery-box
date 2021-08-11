@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 from .cloud_init import MinimalCloudInit
 from .ssh import SSH
-from .utils import read_var
 from .multipass import Multipass
 from abc import ABC, abstractmethod
 from .software_backends import VMConfiguratorProvisioner
@@ -58,19 +57,6 @@ class DevBoxMultipass(DevBox):
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def launch(self, opts: dict[str, str]) -> None:
-        config_path = Path(read_var('CONFIG_PATH'))
-
-        MinimalCloudInit().write(config_path)
-
-        Multipass.launch({
-            'name': self.name,
-            'config_path': config_path,
-            'ram': opts['memory'],
-            'disk': opts['disk'],
-            'image': 'ubuntu'
-        })
-
     def configure(self, playbook: Optional[str]) -> None:
         if playbook:
             # -- configure via ansible, otherwise just exit.
@@ -112,19 +98,21 @@ class DevBoxMultipass(DevBox):
             except:
                 raise ParserError(f'failed to parse {tgt} as yaml')
 
-
     def up(self, opts: dict[str, str]) -> None:
         cfg = self.load_config(opts.get('config'))
-
-        default_opts = cfg
 
         start_time = time.monotonic()
         info = Multipass.info(self.name)
 
         if not info or info['state'] != 'Running':
-            self.launch({
-                'disk': default_opts['disk'],
-                'memory': default_opts['memory']
+            cloud_init = MinimalCloudInit(cfg['user'], Path(cfg['ssh_public_path'])).create_config()
+
+            Multipass.launch({
+                'name': self.name,
+                'config': cloud_init,
+                'ram': cfg['memory'],
+                'disk': cfg['disk'],
+                'image': 'ubuntu'
             })
 
         ipv4 = self.ip()
@@ -137,8 +125,7 @@ class DevBoxMultipass(DevBox):
 
         logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
 
-        self.configure(default_opts['playbook'])
-
+        self.configure(cfg['playbook'])
 
     def launch(self, opts: dict[str, str]) -> None:
         start_time = time.monotonic()
@@ -162,11 +149,8 @@ class DevBoxMultipass(DevBox):
 
         self.configure(opts['playbook'])
 
-
     def into(self, user: str) -> None:
         """SSH into the devbox"""
-
-        user = user if user else read_var('USER')
 
         Multipass.start(self.name)
         ipv4 = self.ip()

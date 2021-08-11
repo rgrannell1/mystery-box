@@ -2,11 +2,7 @@
 
 from abc import ABC, abstractmethod
 import yaml
-from dotenv import load_dotenv
 from pathlib import Path
-from .utils import read_var
-
-load_dotenv()
 
 
 class CloudInit(ABC):
@@ -24,6 +20,10 @@ class MinimalCloudInit:
     """Set up minimal cloud-init configuration that will allow SSH connections
     into an instance, and configures sone user"""
 
+    def __init__(self, user: str, ssh_public_path: Path) -> None:
+        self.user = user
+        self.ssh_public_path = ssh_public_path
+
     def read_public_keys(self, fpaths: list[Path]) -> list[str]:
         results = []
 
@@ -34,30 +34,20 @@ class MinimalCloudInit:
 
         return results
 
-    def create_config(self):
-        USER = read_var('USER')
-        SSH_PUBLIC_PATH = Path(read_var('SSH_PUBLIC_PATH'))
+    def create_config(self) -> str:
+        ssh_keys = self.read_public_keys([self.ssh_public_path])
 
-        ssh_keys = self.read_public_keys([SSH_PUBLIC_PATH])
-
-        return {
+        return yaml.dump({
             'users': [
                 {
                     'name': 'root',
                     'ssh-authorized-keys': ssh_keys
                 },
                 {
-                    'name': USER,
+                    'name': self.user,
                     'ssh-authorized-keys': ssh_keys,
                     'groups': 'sudo',
                     'sudo': ['ALL=(ALL) NOPASSWD: ALL']
                 }
             ]
-        }
-
-    def write(self, fpath: Path):
-        """Write cloud-init configuration to a temporary file"""
-
-        with open(fpath, 'w') as conn:
-            config = self.create_config()
-            conn.write(yaml.dump(config))
+        })
