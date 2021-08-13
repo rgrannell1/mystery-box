@@ -3,3 +3,5 @@ cloud-init.yaml
 src/__pycache__/
 build/
 *cpython*
+src/box/ansible
+box.yaml

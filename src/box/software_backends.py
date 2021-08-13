@@ -5,6 +5,9 @@ import subprocess
 import tempfile
 import time
 import yaml
+
+from box.box_config import BoxConfig
+from box.ssh import SCP, SSH
 from .utils import logging
 from abc import ABC, abstractmethod
 
@@ -25,6 +28,10 @@ class VMConfigurator(ABC):
         pass
 
     @abstractmethod
+    def configure(self, cfg: BoxConfig) -> None:
+        pass
+
+    @abstractmethod
     def run(self) -> None:
         pass
 
@@ -32,11 +39,14 @@ class VMConfigurator(ABC):
 class AnsibleConfiguration(VMConfigurator):
     name: str
     ip: str
-    playbook_path: str
+    cfg: BoxConfig
 
     def __init__(self, name: str, ip: str) -> None:
         self.name = name
         self.ip = ip
+
+    def configure(self, cfg: BoxConfig) -> None:
+        self.cfg = cfg
 
     def test_connection(self) -> bool:
         return True  # todo
@@ -48,14 +58,23 @@ class AnsibleConfiguration(VMConfigurator):
     def run(self) -> None:
         start_time = time.monotonic()
 
+        # -- first, copy all required resources over.
+        scp=SCP(user=self.cfg.user, ip=self.ip)
+        ssh=SSH(user=self.cfg.user, ip=self.ip)
+
+        for entry in self.cfg.copy:
+            scp.copy(entry['src'], entry['dest'])
+
+        scp.copy(self.cfg.playbook, Path('mystery-box-playbook.yaml'))
+
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             inventory_path = Path(tmp.name)
 
             with open(inventory_path, 'w') as conn:
                 conn.write(inventory_config(self.ip))
 
-            subprocess.run(['ansible-playbook', '-i',
-                            inventory_path, self.playbook_path])
+            scp.copy(inventory_path, Path('inventory.yaml'))
+            ssh.run(f'ansible-playbook -i inventory.yaml mystery-box-playbook.yaml')
 
             seconds_elapsed = round(time.monotonic() - start_time)
             logging.info(

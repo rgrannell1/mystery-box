@@ -3,3 +3,6 @@ ssh_public_path: /home/rg/.ssh/id_rsa.pub
 memory: 3G
 disk: 30G
 playbook: '/home/rg/.ansible/bootstrap.yaml'
+copy:
+  - src: 'src/box/ansible'
+    dest: 'ansible_bootstrap'

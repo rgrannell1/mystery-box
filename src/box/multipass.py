@@ -69,7 +69,6 @@ class Multipass:
                 logging.error(msg)
                 exit(1)
 
-
     @classmethod
     def stop(cls, name: str):
         subprocess.run(['multipass', 'stop', name])
