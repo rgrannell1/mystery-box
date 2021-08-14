@@ -4,7 +4,6 @@
 
 Usage:
   box up [--config <str>]
-  box launch [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
   box in [--user <user>] [--config <str>]
   box configure [--playbook <str>]
   box test
@@ -43,17 +42,7 @@ def main():
     vm = DevBoxProvisioner.create('multipass', 'devbox')
 
     if args['up']:
-        vm.up({
-            'disk': args['--disk'],
-            'memory': args['--memory'],
-            'playbook': args['--playbook']
-        })
-    elif args['launch']:
-        vm.launch({
-            'disk': args['--disk'],
-            'memory': args['--memory'],
-            'playbook': args['--playbook']
-        })
+        vm.up()
     elif args['in']:
         vm.into({
             'user': args['--user'],

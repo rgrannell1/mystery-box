@@ -5,9 +5,8 @@ from pathlib import Path
 
 
 class BoxConfig:
-    def __init__(self, user: str, ssh_public_path: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]]) -> None:
+    def __init__(self, user: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]]) -> None:
         self.user = user
-        self.ssh_public_path = ssh_public_path
         self.memory = memory
         self.disk = disk
         self.playbook = playbook
@@ -23,17 +22,6 @@ class BoxConfig:
             raise ValueError('user is required')
 
         self._user = value
-
-    @property
-    def ssh_public_path(self):
-        return self._ssh_public_path
-
-    @ssh_public_path.setter
-    def ssh_public_path(self, value):
-        if value is None:
-            raise ValueError('ssh_public_path is required')
-
-        self._ssh_public_path = value
 
     @property
     def memory(self):

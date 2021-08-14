@@ -3,6 +3,8 @@ import os
 import time
 import yaml
 from yaml.parser import ParserError
+
+from box import constants
 from .utils import logging
 from pathlib import Path
 from typing import Optional
@@ -20,11 +22,7 @@ class DevBox(ABC):
         pass
 
     @abstractmethod
-    def launch(self, opts: dict[str, str]) -> None:
-        pass
-
-    @abstractmethod
-    def up(self, opts: dict[str, str]) -> None:
+    def up(self) -> None:
         pass
 
     @abstractmethod
@@ -80,11 +78,11 @@ class DevBoxMultipass(DevBox):
         configurator.run()
 
     def ip(self) -> Optional[str]:
-        info=Multipass.info(self.name)
+        info = Multipass.info(self.name)
         return info['ipv4'][0] if info else None
 
     def load_config(self, fpath: Optional[str]) -> BoxConfig:
-        default_cfg=os.path.join(os.getcwd(), 'box.yaml')
+        default_cfg = os.path.join(os.getcwd(), 'box.yaml')
 
         if fpath and not os.path.exists(fpath):
             logging.error(f'file "{fpath}" does not exist.')
@@ -93,37 +91,37 @@ class DevBoxMultipass(DevBox):
             logging.error(f'file "{default_cfg}" does not exist.')
             exit(1)
 
-        tgt=fpath if fpath else default_cfg
+        tgt = fpath if fpath else default_cfg
 
         with open(tgt) as conn:
-            cfg=conn.read()
+            cfg = conn.read()
 
             try:
-                opts=yaml.load(cfg, Loader = yaml.SafeLoader)
+                opts = yaml.load(cfg, Loader=yaml.SafeLoader)
 
                 return BoxConfig(
-                    user = opts['user'],
-                    ssh_public_path = opts['ssh_public_path'],
-                    memory = opts['memory'],
-                    disk = opts['disk'],
-                    playbook = opts['playbook'],
-                    copy = opts['copy']
+                    user=opts['user'],
+                    memory=opts['memory'],
+                    disk=opts['disk'],
+                    playbook=opts['playbook'],
+                    copy=opts['copy']
                 )
             except:
                 raise ParserError(f'failed to parse {tgt} as yaml')
 
-    def up(self, opts: dict[str, str]) -> None:
-        cfg=self.load_config(opts.get('config'))
+    def up(self) -> None:
+        cfg = self.load_config(None)
 
-        start_time=time.monotonic()
-        info=Multipass.info(self.name)
+        start_time = time.monotonic()
+        info = Multipass.info(self.name)
 
         if not info or info['state'] != 'Running':
             # -- we shouldn't assume Ansible is present on the machine; let's copy any ansible
             # -- content to the VM, and have the VM configure itself! One restriction is we can only really
             # -- work within a single directory
-            cloud_init=BootstrappingCloudInit(
-                cfg.user, Path(cfg.ssh_public_path)).to_yaml()
+
+            cloud_init = BootstrappingCloudInit(
+                cfg.user).to_yaml()
 
             Multipass.launch({
                 'name': self.name,
@@ -133,52 +131,31 @@ class DevBoxMultipass(DevBox):
                 'image': 'ubuntu'
             })
 
-        ipv4=self.ip()
+        ipv4 = self.ip()
 
         if not ipv4:
             logging.error(f'📦 ipv4 not present')
             exit(1)
 
-        seconds_elapsed=round(time.monotonic() - start_time)
+        seconds_elapsed = round(time.monotonic() - start_time)
 
         logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
 
         self.configure(cfg)
 
-    def launch(self, opts) -> None:
-        start_time=time.monotonic()
-        info=Multipass.info(self.name)
-
-        if not info or info['state'] != 'Running':
-            self.launch({
-                'disk': opts['disk'],
-                'memory': opts['memory']
-            })
-
-        ipv4=self.ip()
-
-        if not ipv4:
-            logging.error(f'📦 ipv4 not present')
-            exit(1)
-
-        seconds_elapsed=round(time.monotonic() - start_time)
-
-        logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
-
-        self.configure(opts)
-
     def into(self, opts: dict) -> None:
         """SSH into the devbox"""
 
-        cfg=self.load_config(opts.get('config'))
+        cfg = self.load_config(opts.get('config'))
 
-        user=opts['user'] if opts.get('user') else cfg.user
+        user = opts['user'] if opts.get('user') else cfg.user
 
         Multipass.start(self.name)
-        ipv4=self.ip()
+        ipv4 = self.ip()
 
         if ipv4:
-            SSH(user, ipv4).open()
+            with SSH(user, ipv4) as ssh:
+                ssh.open()
         else:
             logging.error(f'📦 cannot access instance, no IP found.')
 
@@ -193,7 +170,7 @@ class DevBoxMultipass(DevBox):
 
 
 class DevBoxProvisioner():
-    backends: dict[str, type[DevBox]]={
+    backends: dict[str, type[DevBox]] = {
         'multipass': DevBoxMultipass
     }
 
