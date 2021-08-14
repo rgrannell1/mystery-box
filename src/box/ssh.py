@@ -1,12 +1,10 @@
 
 import os
-import pathlib
+from pathlib import Path
 import subprocess
 import paramiko
 from paramiko.rsakey import RSAKey
-
-from box import constants
-
+from .box_config import BoxConfig
 
 class SSH:
     """Manage SSH connections"""
@@ -14,7 +12,7 @@ class SSH:
     user: str
     client: paramiko.SSHClient
 
-    def __init__(self, user: str, ip: str) -> None:
+    def __init__(self, user: str, ip: str, cfg: BoxConfig) -> None:
         self.user = user
         self.ip = ip
         self.client = paramiko.SSHClient()
@@ -25,18 +23,17 @@ class SSH:
     def __exit__(self, type, value, traceback) -> None:
         self.client.close()
 
-    def open(self) -> None:
+    def open(self, folder: Path) -> None:
         """Open an SSH connection into a provided host, using native SSH"""
 
-        _, ssh_private_path = SSH.save_keypair(constants.BUILD_FOLDER)
+        _, ssh_private_path = SSH.save_keypair(folder)
         subprocess.run(
             f'ssh {self.user}@{self.ip} -i {ssh_private_path}', shell=True)
 
-    def run(self, cmd: str) -> None:
+    def run(self, folder: Path, cmd: str) -> None:
         """Run an SSH command, and print the output"""
 
-        _, ssh_private_path = self.save_keypair(
-            constants.BUILD_FOLDER)
+        _, ssh_private_path = self.save_keypair(folder)
 
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.ip, username=self.user,
@@ -47,7 +44,7 @@ class SSH:
             print(line, end='')
 
     @staticmethod
-    def save_keypair(build_folder: pathlib.Path):
+    def save_keypair(build_folder: Path):
         """Save RSA public, private keys to a file"""
 
         # -- do the credentials exist?
@@ -78,10 +75,10 @@ class SSH:
 
         # -- save a private-key
         priv_key = RSAKey.generate(bits=4096)
-        priv_key.write_private_key_file(str(private_key_path), password=None)
+        priv_key.write_private_key_file(str(private_key_path), password='')
 
         # -- save a public-key
-        pub_key = RSAKey(filename=str(private_key_path), password=None)
+        pub_key = RSAKey(filename=str(private_key_path), password='')
 
         with open(public_key_path, 'w') as conn:
             conn.write('{0} {1}'.format(

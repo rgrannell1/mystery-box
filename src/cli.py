@@ -6,7 +6,6 @@ Usage:
   box up [--config <str>]
   box in [--user <user>] [--config <str>]
   box configure [--playbook <str>]
-  box test
   box start
   box stop
   box (-h|--help)
@@ -31,15 +30,14 @@ Options:
 """
 
 from docopt import docopt
-from box.hardware_backends import DevBoxProvisioner
-
+from box import hardware_backends
 
 def main():
     """Call the correct CLI command"""
 
     args = docopt(__doc__, version='Box 1.0')
 
-    vm = DevBoxProvisioner.multipass('devbox')
+    vm = hardware_backends.DevBoxProvisioner.multipass('devbox')
 
     if args['up']:
         vm.up()
@@ -52,8 +50,6 @@ def main():
         vm.stop()
     elif args['start']:
         vm.start()
-    elif args['test']:
-        vm.test()
     elif args['configure']:
         vm.configure(args['--playbook'])
 

@@ -99,7 +99,8 @@ class DevBoxMultipass(DevBox):
                     memory=opts['memory'],
                     disk=opts['disk'],
                     playbook=opts['playbook'],
-                    copy=opts['copy']
+                    copy=opts['copy'],
+                    key_folder=opts['key_folder']
                 )
             except:
                 raise ParserError(f'failed to parse {tgt} as yaml')
@@ -117,7 +118,7 @@ class DevBoxMultipass(DevBox):
             # -- work within a single directory
 
             cloud_init = BootstrappingCloudInit(
-                cfg.user).to_yaml()
+                cfg.user, cfg.key_folder).to_yaml()
 
             Multipass.launch({
                 'name': self.name,
@@ -157,8 +158,8 @@ class DevBoxMultipass(DevBox):
         ipv4 = self.ip()
 
         if ipv4:
-            with SSH(user, ipv4) as ssh:
-                ssh.open()
+            with SSH(user, ipv4, cfg) as ssh:
+                ssh.open(cfg.key_folder)
         else:
             logging.error(f'📦 cannot access instance, no IP found.')
 

@@ -6,12 +6,14 @@ from pathlib import Path
 
 class BoxConfig:
     """A dataclass for box-configuration, that validates each provided argument."""
-    def __init__(self, user: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]]) -> None:
+
+    def __init__(self, user: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]], key_folder: Path) -> None:
         self.user = user
         self.memory = memory
         self.disk = disk
         self.playbook = playbook
         self.copy = copy
+        self.key_folder = key_folder
 
     @property
     def user(self):
@@ -51,6 +53,20 @@ class BoxConfig:
                 raise FileNotFoundError(f'file {value} does not exist')
 
             self._playbook = Path(value)
+
+    @property
+    def key_folder(self):
+        return self._key_folder
+
+    @key_folder.setter
+    def key_folder(self, value):
+        if not value:
+            raise ValueError('key_folder must be provided')
+
+        if not os.path.exists(value):
+            raise FileNotFoundError(f'folder {value} does not exist')
+
+        self._key_folder = Path(value)
 
     @property
     def copy(self):

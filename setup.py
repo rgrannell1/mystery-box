@@ -11,8 +11,9 @@ setup(
   python_requires=">=3.9",
   install_requires=requirements,
   packages=find_packages(),
-  entry_points = """
-      [console_scripts]
-      box=box.cli:main
-  """
+  entry_points = {
+    'console_scripts': {
+      'box=src.cli:main'
+    }
+  }
 )

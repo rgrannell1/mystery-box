@@ -5,9 +5,9 @@ import tempfile
 import time
 import yaml
 
-from box.box_config import BoxConfig
-from box.ssh import SSH
-from box.scp import SCP
+from .box_config import BoxConfig
+from .ssh import SSH
+from .scp import SCP
 from .utils import logging
 from abc import ABC, abstractmethod
 
@@ -63,13 +63,14 @@ class AnsibleConfiguration(VMConfigurator):
         # -- first, copy all required resources over.
         with SCP(user='root', ip=self.ip) as scp:
             for entry in self.cfg.copy:
-                scp.copy(entry['src'], entry['dest'])
+                scp.copy(self.cfg.key_folder, entry['src'], entry['dest'])
 
-            scp.copy(self.cfg.playbook, Path('/mystery-box-playbook.yaml'))
+            scp.copy(self.cfg.key_folder, self.cfg.playbook,
+                     Path('/mystery-box-playbook.yaml'))
 
             # -- use ssh to call ansible on the remote host, to configure its own host on localhost.
-            with SSH(user='root', ip=self.ip) as ssh:
-                ssh.run(
+            with SSH(user='root', ip=self.ip, cfg=self.cfg) as ssh:
+                ssh.run(self.cfg.key_folder,
                     f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')
 
                 seconds_elapsed = round(time.monotonic() - start_time)

@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 import yaml
 from pathlib import Path
 
-from box import constants
-from box.ssh import SSH
+from .ssh import SSH
 
 
 class CloudInit(ABC):
@@ -34,13 +33,16 @@ class BootstrappingCloudInit(CloudInit):
     installling Ansible from cloud-init and calling Ansible over SSH. This has limitations; system-specific configuration
     and auxilarily ansible files won't be easily bundled up and sent to the remote instance"""
 
-    def __init__(self, user: str) -> None:
-        self.user = user
+    cfg: dict
 
-    def create_config(self) -> dict:
+    def __init__(self, user: str, folder: Path) -> None:
+        self.user = user
+        self.cfg = self.create_config(folder)
+
+    def create_config(self, folder: Path) -> dict:
         """Create minimal cloud-init configuration"""
 
-        ssh_public_path, _ = SSH.save_keypair(constants.BUILD_FOLDER)
+        ssh_public_path, _ = SSH.save_keypair(folder)
         ssh_keys = self.read_public_keys([ssh_public_path])
 
         return {
@@ -72,4 +74,4 @@ class BootstrappingCloudInit(CloudInit):
 
     def to_yaml(self) -> str:
         """Convert Cloud-Init configuration to YAML"""
-        return yaml.dump(self.create_config())
+        return yaml.dump(self.cfg)

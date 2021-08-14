@@ -1,11 +1,10 @@
 
 import os
 import logging
-import pathlib
+from pathlib import Path
 import paramiko
 
-from box import constants
-from box.ssh import SSH
+from .ssh import SSH
 
 
 class SCP:
@@ -29,13 +28,13 @@ class SCP:
     def __exit__(self, type, value, traceback) -> None:
         self.client.close()
 
-    def copy(self, src: pathlib.Path, dest: pathlib.Path) -> None:
+    def copy(self, folder: Path, src: Path, dest: Path) -> None:
         """Copy a file or folder from a local source to a remote destination"""
 
-        _, ssh_private_path = SSH.save_keypair(
-            constants.BUILD_FOLDER)
+        _, ssh_private_path = SSH.save_keypair(folder)
 
-        key = paramiko.RSAKey.from_private_key_file(str(ssh_private_path))
+        key = paramiko.RSAKey.from_private_key_file(
+            str(ssh_private_path), password='')
 
         self.client.connect(self.ip, username=self.user,
                             pkey=key)
