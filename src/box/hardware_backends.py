@@ -4,15 +4,13 @@ import time
 import yaml
 from yaml.parser import ParserError
 
-from box import constants
 from .utils import logging
-from pathlib import Path
 from typing import Optional
 from .cloud_init import BootstrappingCloudInit
 from .ssh import SSH
 from .multipass import Multipass
 from abc import ABC, abstractmethod
-from .software_backends import VMConfiguratorProvisioner
+from .software_backends import VMConfigurators
 from .box_config import BoxConfig
 
 
@@ -70,11 +68,8 @@ class DevBoxMultipass(DevBox):
             logging.error(f'📦 ipv4 not present')
             exit(1)
 
-        configurator = VMConfiguratorProvisioner.create(
-            'ansible', self.name, ipv4)
-
+        configurator = VMConfigurators.ansible(self.name, ipv4)
         configurator.configure(cfg)
-
         configurator.run()
 
     def ip(self) -> Optional[str]:

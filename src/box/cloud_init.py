@@ -38,6 +38,8 @@ class BootstrappingCloudInit(CloudInit):
         self.user = user
 
     def create_config(self) -> dict:
+        """Create minimal cloud-init configuration"""
+
         ssh_public_path, _ = SSH.save_keypair(constants.BUILD_FOLDER)
         ssh_keys = self.read_public_keys([ssh_public_path])
 
@@ -69,4 +71,5 @@ class BootstrappingCloudInit(CloudInit):
         }
 
     def to_yaml(self) -> str:
+        """Convert Cloud-Init configuration to YAML"""
         return yaml.dump(self.create_config())

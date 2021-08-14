@@ -8,6 +8,16 @@
       "program": "src/cli.py",
       "console": "integratedTerminal",
       "args": ["up"]
+    },
+    {
+      "name": "Box In",
+      "type": "python",
+      "request": "launch",
+      "program": "src/cli.py",
+      "console": "integratedTerminal",
+      "args": [
+        "in"
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ import paramiko
 from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend as crypto_default_backend
+from paramiko.rsakey import RSAKey
 
 from box import constants
 
@@ -31,12 +32,12 @@ class SSH:
     def open(self) -> None:
         """Open an SSH connection into a provided host, using native SSH"""
 
-        _, ssh_private_path = SSH.generate_keypair()
-
-        subprocess.run(
-            ['ssh', f'{self.user}@{self.ip}', '-i ', ssh_private_path])
+        _, ssh_private_path = SSH.save_keypair(constants.BUILD_FOLDER)
+        subprocess.run(f'ssh {self.user}@{self.ip} -i {ssh_private_path}', shell=True)
 
     def run(self, cmd: str) -> None:
+        """Run an SSH command, and print the output"""
+
         _, ssh_private_path = self.save_keypair(
             constants.BUILD_FOLDER)
 
@@ -44,32 +45,14 @@ class SSH:
         self.client.connect(self.ip, username=self.user,
                             key_filename=str(ssh_private_path))
 
-        self.client.exec_command(cmd)
-
-    @staticmethod
-    def generate_keypair():
-        key = rsa.generate_private_key(
-            backend=crypto_default_backend(),
-            # -- not a choice by me; this is a mandatory constant
-            public_exponent=65537,
-            # -- big key secure key
-            key_size=4096
-        )
-
-        private_key = key.private_bytes(
-            crypto_serialization.Encoding.PEM,
-            crypto_serialization.PrivateFormat.PKCS8,
-            crypto_serialization.NoEncryption())
-
-        public_key = key.public_key().public_bytes(
-            crypto_serialization.Encoding.OpenSSH,
-            crypto_serialization.PublicFormat.OpenSSH
-        )
-
-        return public_key, private_key
+        _, stdout, _ = self.client.exec_command(cmd, get_pty=True)
+        for line in iter(stdout.readline, ''):
+            print(line, end='')
 
     @staticmethod
     def save_keypair(build_folder: pathlib.Path):
+        """Save RSA public, private keys to a file"""
+
         # -- do the credentials exist?
 
         build_folder.chmod(0o700)
@@ -92,19 +75,17 @@ class SSH:
                 os. remove(public_key_path)
 
             if private_key_exists:
-                os. remove(private_key_path)
+                os.remove(private_key_path)
 
         # -- neither exists; save newly generated credentials
-        public_key, private_key = SSH.generate_keypair()
+        priv_key = RSAKey.generate(bits=4096)
+        priv_key.write_private_key_file(str(private_key_path), password=None)
+
+        pub_key = RSAKey(filename=str(private_key_path), password=None)
 
         with open(public_key_path, 'w') as conn:
-            conn.write(public_key.decode('utf8'))
-
-        public_key_path.chmod(0o600)
-
-        with open(private_key_path, 'w') as conn:
-            conn.write(private_key.decode('utf8'))
-
-        private_key_path.chmod(0o600)
+            conn.write('{0} {1}'.format(
+                pub_key.get_name(), pub_key.get_base64()))
+            conn.flush()
 
         return public_key_path, private_key_path

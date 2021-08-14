@@ -73,8 +73,6 @@ class AnsibleConfiguration(VMConfigurator):
 
                 scp.copy(inventory_path, Path('inventory.yaml'))
 
-                return
-
                 with SSH(user='root', ip=self.ip) as ssh:
                     ssh.run(
                         f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')
@@ -84,19 +82,5 @@ class AnsibleConfiguration(VMConfigurator):
                         f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
 
 
-class VMConfiguratorProvisioner():
-    backends: dict[str, type[VMConfigurator]] = {
-        'ansible': AnsibleConfiguration
-    }
-
-    @staticmethod
-    def create(backend: str, name: str, ip: str) -> VMConfigurator:
-        """Create a DevBox instance with the requested backend service."""
-
-        configurator = VMConfiguratorProvisioner.backends.get(backend)
-
-        if configurator is None:
-            raise Exception(
-                f'software-configuration backend "{backend}" not supported')
-        else:
-            return configurator(name, ip)
+class VMConfigurators():
+    ansible = AnsibleConfiguration
