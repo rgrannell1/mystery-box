@@ -65,21 +65,14 @@ class AnsibleConfiguration(VMConfigurator):
 
             scp.copy(self.cfg.playbook, Path('/mystery-box-playbook.yaml'))
 
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                inventory_path = Path(tmp.name)
+            # -- use ssh to call ansible on the remote host, to configure its own host on localhost
+            with SSH(user='root', ip=self.ip) as ssh:
+                ssh.run(
+                    f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')
 
-                with open(inventory_path, 'w') as conn:
-                    conn.write(inventory_config(self.ip))
-
-                scp.copy(inventory_path, Path('inventory.yaml'))
-
-                with SSH(user='root', ip=self.ip) as ssh:
-                    ssh.run(
-                        f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')
-
-                    seconds_elapsed = round(time.monotonic() - start_time)
-                    logging.info(
-                        f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
+                seconds_elapsed = round(time.monotonic() - start_time)
+                logging.info(
+                    f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
 
 
 class VMConfigurators():
