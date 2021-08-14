@@ -4,7 +4,6 @@
 
 Usage:
   box up [--config <str>]
-  box launch [--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
   box in [--user <user>] [--config <str>]
   box configure [--playbook <str>]
   box test
@@ -40,20 +39,10 @@ def main():
 
     args = docopt(__doc__, version='Box 1.0')
 
-    vm = DevBoxProvisioner.create('multipass', 'devbox')
+    vm = DevBoxProvisioner.multipass('devbox')
 
     if args['up']:
-        vm.up({
-            'disk': args['--disk'],
-            'memory': args['--memory'],
-            'playbook': args['--playbook']
-        })
-    elif args['launch']:
-        vm.launch({
-            'disk': args['--disk'],
-            'memory': args['--memory'],
-            'playbook': args['--playbook']
-        })
+        vm.up()
     elif args['in']:
         vm.into({
             'user': args['--user'],

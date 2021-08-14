@@ -3,28 +3,25 @@ import os
 import time
 import yaml
 from yaml.parser import ParserError
+
 from .utils import logging
-from pathlib import Path
 from typing import Optional
 from .cloud_init import BootstrappingCloudInit
 from .ssh import SSH
 from .multipass import Multipass
 from abc import ABC, abstractmethod
-from .software_backends import VMConfiguratorProvisioner
+from .software_backends import VMConfigurators
 from .box_config import BoxConfig
 
 
 class DevBox(ABC):
+    """An abstract class for each hardware backend"""
     @abstractmethod
     def __init__(self, name: str) -> None:
         pass
 
     @abstractmethod
-    def launch(self, opts: dict[str, str]) -> None:
-        pass
-
-    @abstractmethod
-    def up(self, opts: dict[str, str]) -> None:
+    def up(self) -> None:
         pass
 
     @abstractmethod
@@ -40,25 +37,24 @@ class DevBox(ABC):
         pass
 
     @abstractmethod
-    def test(self) -> None:
-        pass
-
-    @abstractmethod
     def configure(self, cfg: BoxConfig) -> None:
         pass
 
-    @ abstractmethod
+    @abstractmethod
     def ip(self) -> Optional[str]:
         pass
 
 
 class DevBoxMultipass(DevBox):
+    """Set up a devbox using multipass as a VM middle-layer, and
+    ansible as a configurator"""
     name: str
 
     def __init__(self, name: str) -> None:
         self.name = name
 
     def configure(self, cfg: BoxConfig) -> None:
+        """configure the multipass VM"""
         if not cfg.playbook:
             return
 
@@ -72,19 +68,18 @@ class DevBoxMultipass(DevBox):
             logging.error(f'📦 ipv4 not present')
             exit(1)
 
-        configurator = VMConfiguratorProvisioner.create(
-            'ansible', self.name, ipv4)
-
+        configurator = VMConfigurators.ansible(self.name, ipv4)
         configurator.configure(cfg)
-
         configurator.run()
 
     def ip(self) -> Optional[str]:
-        info=Multipass.info(self.name)
+        """Fetch an IP address for a multipass vm"""
+        info = Multipass.info(self.name)
         return info['ipv4'][0] if info else None
 
     def load_config(self, fpath: Optional[str]) -> BoxConfig:
-        default_cfg=os.path.join(os.getcwd(), 'box.yaml')
+        """Load configuration from a file"""
+        default_cfg = os.path.join(os.getcwd(), 'box.yaml')
 
         if fpath and not os.path.exists(fpath):
             logging.error(f'file "{fpath}" does not exist.')
@@ -93,37 +88,36 @@ class DevBoxMultipass(DevBox):
             logging.error(f'file "{default_cfg}" does not exist.')
             exit(1)
 
-        tgt=fpath if fpath else default_cfg
+        tgt = fpath if fpath else default_cfg
 
         with open(tgt) as conn:
-            cfg=conn.read()
-
             try:
-                opts=yaml.load(cfg, Loader = yaml.SafeLoader)
+                opts = yaml.load(conn.read(), Loader=yaml.SafeLoader)
 
                 return BoxConfig(
-                    user = opts['user'],
-                    ssh_public_path = opts['ssh_public_path'],
-                    memory = opts['memory'],
-                    disk = opts['disk'],
-                    playbook = opts['playbook'],
-                    copy = opts['copy']
+                    user=opts['user'],
+                    memory=opts['memory'],
+                    disk=opts['disk'],
+                    playbook=opts['playbook'],
+                    copy=opts['copy']
                 )
             except:
                 raise ParserError(f'failed to parse {tgt} as yaml')
 
-    def up(self, opts: dict[str, str]) -> None:
-        cfg=self.load_config(opts.get('config'))
+    def up(self) -> None:
+        """Initialise and configure a multipass VM"""
+        cfg = self.load_config(None)
 
-        start_time=time.monotonic()
-        info=Multipass.info(self.name)
+        start_time = time.monotonic()
+        info = Multipass.info(self.name)
 
         if not info or info['state'] != 'Running':
             # -- we shouldn't assume Ansible is present on the machine; let's copy any ansible
             # -- content to the VM, and have the VM configure itself! One restriction is we can only really
             # -- work within a single directory
-            cloud_init=BootstrappingCloudInit(
-                cfg.user, Path(cfg.ssh_public_path)).to_yaml()
+
+            cloud_init = BootstrappingCloudInit(
+                cfg.user).to_yaml()
 
             Multipass.launch({
                 'name': self.name,
@@ -133,77 +127,49 @@ class DevBoxMultipass(DevBox):
                 'image': 'ubuntu'
             })
 
-        ipv4=self.ip()
+        ipv4 = self.ip()
 
         if not ipv4:
             logging.error(f'📦 ipv4 not present')
             exit(1)
 
-        seconds_elapsed=round(time.monotonic() - start_time)
+        seconds_elapsed = round(time.monotonic() - start_time)
 
-        logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
+        logging.info(f'📦 {self.name} hardware up at {ipv4} (+{seconds_elapsed}s)')
+        start_time = time.monotonic()
 
         self.configure(cfg)
 
-    def launch(self, opts) -> None:
-        start_time=time.monotonic()
-        info=Multipass.info(self.name)
+        seconds_elapsed = round(time.monotonic() - start_time)
 
-        if not info or info['state'] != 'Running':
-            self.launch({
-                'disk': opts['disk'],
-                'memory': opts['memory']
-            })
+        logging.info(
+            f'📦 {self.name} fully configured and ready to use (+{seconds_elapsed}s)')
 
-        ipv4=self.ip()
-
-        if not ipv4:
-            logging.error(f'📦 ipv4 not present')
-            exit(1)
-
-        seconds_elapsed=round(time.monotonic() - start_time)
-
-        logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
-
-        self.configure(opts)
 
     def into(self, opts: dict) -> None:
         """SSH into the devbox"""
 
-        cfg=self.load_config(opts.get('config'))
+        cfg = self.load_config(opts.get('config'))
 
-        user=opts['user'] if opts.get('user') else cfg.user
+        user = opts['user'] if opts.get('user') else cfg.user
 
         Multipass.start(self.name)
-        ipv4=self.ip()
+        ipv4 = self.ip()
 
         if ipv4:
-            SSH(user, ipv4).open()
+            with SSH(user, ipv4) as ssh:
+                ssh.open()
         else:
             logging.error(f'📦 cannot access instance, no IP found.')
 
     def stop(self):
+        """Stop a multipass devbox"""
         Multipass.stop(self.name)
 
     def start(self):
+        """Start a multipass devbox"""
         Multipass.start(self.name)
-
-    def test(self):
-        raise NotImplementedError('test is not implemented yet')
 
 
 class DevBoxProvisioner():
-    backends: dict[str, type[DevBox]]={
-        'multipass': DevBoxMultipass
-    }
-
-    @staticmethod
-    def create(backend: str, name: str) -> DevBox:
-        """Create a DevBox instance with the requested backend service."""
-
-        DevBoxBackend = DevBoxProvisioner.backends.get(backend)
-
-        if DevBoxBackend is None:
-            raise Exception(f'backend "{backend}" not supported')
-        else:
-            return DevBoxBackend(name)
+    multipass = DevBoxMultipass

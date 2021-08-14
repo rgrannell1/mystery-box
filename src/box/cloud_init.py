@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 import yaml
 from pathlib import Path
 
+from box import constants
+from box.ssh import SSH
+
 
 class CloudInit(ABC):
 
@@ -26,47 +29,19 @@ class CloudInit(ABC):
         pass
 
 
-class MinimalCloudInit(CloudInit):
-    """Set up minimal cloud-init configuration that will allow SSH connections
-    into an instance, and configures sone user"""
-
-    def __init__(self, user: str, ssh_public_path: Path) -> None:
-        self.user = user
-        self.ssh_public_path = ssh_public_path
-
-    def create_config(self) -> dict:
-        ssh_keys = self.read_public_keys([self.ssh_public_path])
-
-        return {
-            'users': [
-                {
-                    'name': 'root',
-                    'ssh-authorized-keys': ssh_keys
-                },
-                {
-                    'name': self.user,
-                    'ssh-authorized-keys': ssh_keys,
-                    'groups': 'sudo',
-                    'sudo': ['ALL=(ALL) NOPASSWD: ALL']
-                }
-            ]
-        }
-
-    def to_yaml(self) -> str:
-        return yaml.dump(self.create_config())
-
-
 class BootstrappingCloudInit(CloudInit):
     """Windows doesn't support Ansible. That's ok; we'll set up a Multipass instance, and bootstrap b
     installling Ansible from cloud-init and calling Ansible over SSH. This has limitations; system-specific configuration
     and auxilarily ansible files won't be easily bundled up and sent to the remote instance"""
 
-    def __init__(self, user: str, ssh_public_path: Path) -> None:
+    def __init__(self, user: str) -> None:
         self.user = user
-        self.ssh_public_path = ssh_public_path
 
     def create_config(self) -> dict:
-        ssh_keys = self.read_public_keys([self.ssh_public_path])
+        """Create minimal cloud-init configuration"""
+
+        ssh_public_path, _ = SSH.save_keypair(constants.BUILD_FOLDER)
+        ssh_keys = self.read_public_keys([ssh_public_path])
 
         return {
             'users': [
@@ -86,8 +61,15 @@ class BootstrappingCloudInit(CloudInit):
             ],
             'runcmd': [
                 'sudo pip3 install ansible'
+            ],
+            'write_files': [
+                {
+                    'path': '/etc/environment',
+                    'content': 'LANG=en_US.utf-8\nLC_ALL=en_US.utf-8\n'
+                }
             ]
         }
 
     def to_yaml(self) -> str:
+        """Convert Cloud-Init configuration to YAML"""
         return yaml.dump(self.create_config())
