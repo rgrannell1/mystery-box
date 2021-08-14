@@ -1,11 +1,12 @@
 
 import json
 import subprocess
+from typing import Optional
 from .utils import logging
 
 
 class Multipass:
-    """Interact with Multipass."""
+    """Interacts with Multipass as a VM middle-layer"""
     @classmethod
     def list(cls):
         output = subprocess.check_output(
@@ -16,6 +17,7 @@ class Multipass:
 
     @classmethod
     def running_vms(cls):
+        """List VMs that are currently running."""
         info = Multipass.list()
 
         running = set()
@@ -27,7 +29,8 @@ class Multipass:
         return running
 
     @classmethod
-    def info(cls, name: str):
+    def info(cls, name: str) -> Optional[dict]:
+        """Retrieve info about a running instance"""
         running = Multipass.running_vms()
         if not name in running:
             return None
@@ -43,6 +46,8 @@ class Multipass:
 
     @classmethod
     def launch(cls, opts: dict):
+        """Launch a VM with the provided configuration"""
+
         name = opts['name']
         config = opts['config']
         ram = opts['ram']
@@ -55,6 +60,8 @@ class Multipass:
                                      '-d', disk, '-m', ram, image], stderr=subprocess.STDOUT,
                                     input=config.encode())
         except subprocess.CalledProcessError as err:
+            # -- handle launch errors
+
             msg = err.output.decode('utf8')
 
             if 'Remote "" is unknown or unreachable.' in msg:
@@ -71,14 +78,23 @@ class Multipass:
 
     @classmethod
     def stop(cls, name: str):
-        subprocess.run(['multipass', 'stop', name])
+        """Stop a VM by name"""
+
+        try:
+            subprocess.run(['multipass', 'stop', name])
+        except subprocess.CalledProcessError as err:
+            logging.error('Failed to stop VM through multipass')
+            exit(1)
 
     @classmethod
     def start(cls, name: str):
+        """Start a stopped VM"""
+
         for vm in Multipass.list():
             if vm['name'] == name:
                 if vm['state'] == 'Stopped':
                     subprocess.run(['multipass', 'start', name])
             return
 
-        raise Exception(f'vm {name} does not exist')
+        logging.error(f'vm {name} does not exist')
+        exit(1)

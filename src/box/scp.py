@@ -1,4 +1,5 @@
 
+import os
 import logging
 import pathlib
 import paramiko
@@ -29,6 +30,8 @@ class SCP:
         self.client.close()
 
     def copy(self, src: pathlib.Path, dest: pathlib.Path) -> None:
+        """Copy a file or folder from a local source to a remote destination"""
+
         _, ssh_private_path = SSH.save_keypair(
             constants.BUILD_FOLDER)
 
@@ -39,7 +42,8 @@ class SCP:
 
         sftp = self.client.open_sftp()
 
+        if os.path.isdir(src):
+            raise NotImplementedError(f'cannot copy {src}, as directory copies are not yet implemented')
+
         # -- update to support directories
         sftp.put(str(src), str(dest))
-
-        sftp.close()

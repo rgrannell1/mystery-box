@@ -39,7 +39,7 @@ def main():
 
     args = docopt(__doc__, version='Box 1.0')
 
-    vm = DevBoxProvisioner.create('multipass', 'devbox')
+    vm = DevBoxProvisioner.multipass('devbox')
 
     if args['up']:
         vm.up()

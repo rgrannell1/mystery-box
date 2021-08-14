@@ -3,10 +3,6 @@ import os
 import pathlib
 import subprocess
 import paramiko
-
-from cryptography.hazmat.primitives import serialization as crypto_serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.backends import default_backend as crypto_default_backend
 from paramiko.rsakey import RSAKey
 
 from box import constants
@@ -33,7 +29,8 @@ class SSH:
         """Open an SSH connection into a provided host, using native SSH"""
 
         _, ssh_private_path = SSH.save_keypair(constants.BUILD_FOLDER)
-        subprocess.run(f'ssh {self.user}@{self.ip} -i {ssh_private_path}', shell=True)
+        subprocess.run(
+            f'ssh {self.user}@{self.ip} -i {ssh_private_path}', shell=True)
 
     def run(self, cmd: str) -> None:
         """Run an SSH command, and print the output"""
@@ -78,14 +75,16 @@ class SSH:
                 os.remove(private_key_path)
 
         # -- neither exists; save newly generated credentials
+
+        # -- save a private-key
         priv_key = RSAKey.generate(bits=4096)
         priv_key.write_private_key_file(str(private_key_path), password=None)
 
+        # -- save a public-key
         pub_key = RSAKey(filename=str(private_key_path), password=None)
 
         with open(public_key_path, 'w') as conn:
             conn.write('{0} {1}'.format(
                 pub_key.get_name(), pub_key.get_base64()))
-            conn.flush()
 
         return public_key_path, private_key_path

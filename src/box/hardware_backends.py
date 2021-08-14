@@ -15,6 +15,7 @@ from .box_config import BoxConfig
 
 
 class DevBox(ABC):
+    """An abstract class for each hardware backend"""
     @abstractmethod
     def __init__(self, name: str) -> None:
         pass
@@ -36,25 +37,24 @@ class DevBox(ABC):
         pass
 
     @abstractmethod
-    def test(self) -> None:
-        pass
-
-    @abstractmethod
     def configure(self, cfg: BoxConfig) -> None:
         pass
 
-    @ abstractmethod
+    @abstractmethod
     def ip(self) -> Optional[str]:
         pass
 
 
 class DevBoxMultipass(DevBox):
+    """Set up a devbox using multipass as a VM middle-layer, and
+    ansible as a configurator"""
     name: str
 
     def __init__(self, name: str) -> None:
         self.name = name
 
     def configure(self, cfg: BoxConfig) -> None:
+        """configure the multipass VM"""
         if not cfg.playbook:
             return
 
@@ -73,10 +73,12 @@ class DevBoxMultipass(DevBox):
         configurator.run()
 
     def ip(self) -> Optional[str]:
+        """Fetch an IP address for a multipass vm"""
         info = Multipass.info(self.name)
         return info['ipv4'][0] if info else None
 
     def load_config(self, fpath: Optional[str]) -> BoxConfig:
+        """Load configuration from a file"""
         default_cfg = os.path.join(os.getcwd(), 'box.yaml')
 
         if fpath and not os.path.exists(fpath):
@@ -89,10 +91,8 @@ class DevBoxMultipass(DevBox):
         tgt = fpath if fpath else default_cfg
 
         with open(tgt) as conn:
-            cfg = conn.read()
-
             try:
-                opts = yaml.load(cfg, Loader=yaml.SafeLoader)
+                opts = yaml.load(conn.read(), Loader=yaml.SafeLoader)
 
                 return BoxConfig(
                     user=opts['user'],
@@ -105,6 +105,7 @@ class DevBoxMultipass(DevBox):
                 raise ParserError(f'failed to parse {tgt} as yaml')
 
     def up(self) -> None:
+        """Initialise and configure a multipass VM"""
         cfg = self.load_config(None)
 
         start_time = time.monotonic()
@@ -134,9 +135,16 @@ class DevBoxMultipass(DevBox):
 
         seconds_elapsed = round(time.monotonic() - start_time)
 
-        logging.info(f'📦 {self.name} up at {ipv4} (+{seconds_elapsed}s)')
+        logging.info(f'📦 {self.name} hardware up at {ipv4} (+{seconds_elapsed}s)')
+        start_time = time.monotonic()
 
         self.configure(cfg)
+
+        seconds_elapsed = round(time.monotonic() - start_time)
+
+        logging.info(
+            f'📦 {self.name} fully configured and ready to use (+{seconds_elapsed}s)')
+
 
     def into(self, opts: dict) -> None:
         """SSH into the devbox"""
@@ -155,27 +163,13 @@ class DevBoxMultipass(DevBox):
             logging.error(f'📦 cannot access instance, no IP found.')
 
     def stop(self):
+        """Stop a multipass devbox"""
         Multipass.stop(self.name)
 
     def start(self):
+        """Start a multipass devbox"""
         Multipass.start(self.name)
-
-    def test(self):
-        raise NotImplementedError('test is not implemented yet')
 
 
 class DevBoxProvisioner():
-    backends: dict[str, type[DevBox]] = {
-        'multipass': DevBoxMultipass
-    }
-
-    @staticmethod
-    def create(backend: str, name: str) -> DevBox:
-        """Create a DevBox instance with the requested backend service."""
-
-        DevBoxBackend = DevBoxProvisioner.backends.get(backend)
-
-        if DevBoxBackend is None:
-            raise Exception(f'backend "{backend}" not supported')
-        else:
-            return DevBoxBackend(name)
+    multipass = DevBoxMultipass

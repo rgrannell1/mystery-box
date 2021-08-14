@@ -19,6 +19,7 @@ def inventory_config(ip: str) -> str:
 
 
 class VMConfigurator(ABC):
+    """An abstract-class describing ways of configuring a VM"""
     @abstractmethod
     def __init__(self, name: str, ip: str) -> None:
         pass
@@ -37,6 +38,7 @@ class VMConfigurator(ABC):
 
 
 class AnsibleConfiguration(VMConfigurator):
+    """Describes how to configure a VM using Ansible."""
     name: str
     ip: str
     cfg: BoxConfig
@@ -65,7 +67,7 @@ class AnsibleConfiguration(VMConfigurator):
 
             scp.copy(self.cfg.playbook, Path('/mystery-box-playbook.yaml'))
 
-            # -- use ssh to call ansible on the remote host, to configure its own host on localhost
+            # -- use ssh to call ansible on the remote host, to configure its own host on localhost.
             with SSH(user='root', ip=self.ip) as ssh:
                 ssh.run(
                     f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')

@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 class BoxConfig:
+    """A dataclass for box-configuration, that validates each provided argument."""
     def __init__(self, user: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]]) -> None:
         self.user = user
         self.memory = memory
