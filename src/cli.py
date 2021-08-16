@@ -30,7 +30,7 @@ Options:
 """
 
 from docopt import docopt
-from box import hardware_backends
+from .box import hardware_backends
 
 def main():
     """Call the correct CLI command"""
