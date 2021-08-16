@@ -39,7 +39,10 @@ class SSH:
         self.client.connect(self.ip, username=self.user,
                             key_filename=str(ssh_private_path))
 
-        _, stdout, _ = self.client.exec_command(cmd, get_pty=True)
+        _, stdout, stderr = self.client.exec_command(cmd, get_pty=True)
+        for line in iter(stderr.readline, ''):
+            print(line, end='')
+
         for line in iter(stdout.readline, ''):
             print(line, end='')
 

@@ -25,10 +25,6 @@ class VMConfigurator(ABC):
         pass
 
     @abstractmethod
-    def test_connection(self) -> bool:
-        pass
-
-    @abstractmethod
     def configure(self, cfg: BoxConfig) -> None:
         pass
 
@@ -50,14 +46,13 @@ class AnsibleConfiguration(VMConfigurator):
     def configure(self, cfg: BoxConfig) -> None:
         self.cfg = cfg
 
-    def test_connection(self) -> bool:
-        return True  # todo
-
     def create_config(self) -> str:
         raise NotImplementedError(
             'no default ansible configuration, extend and provide your own')
 
     def run(self) -> None:
+        """Run an ansible playbook on the remote host."""
+        tgt = '/mystery-box-playbook.yaml'
         start_time = time.monotonic()
 
         # -- first, copy all required resources over.
@@ -66,12 +61,12 @@ class AnsibleConfiguration(VMConfigurator):
                 scp.copy(self.cfg.key_folder, entry['src'], entry['dest'])
 
             scp.copy(self.cfg.key_folder, self.cfg.playbook,
-                     Path('/mystery-box-playbook.yaml'))
+                     Path(tgt))
 
             # -- use ssh to call ansible on the remote host, to configure its own host on localhost.
             with SSH(user='root', ip=self.ip, cfg=self.cfg) as ssh:
                 ssh.run(self.cfg.key_folder,
-                    f'ansible-playbook -i "localhost, " -c local /mystery-box-playbook.yaml')
+                    f'ansible-playbook -i "localhost, " -c local {tgt}')
 
                 seconds_elapsed = round(time.monotonic() - start_time)
                 logging.info(

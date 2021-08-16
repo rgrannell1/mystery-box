@@ -7,9 +7,9 @@ Construct a developer environment in one command.
 
 ```bash
 box up [--config <str>]
-box launch
-[--memory <memory>] [--disk <disk>] [--backend <backend>] [--playbook <str>]
-box in [--user <user>]
+box in [--user <user>] [--config <str>]
+box configure [--playbook <str>]
+box start
 box stop
 ```
 
