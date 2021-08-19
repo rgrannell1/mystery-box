@@ -7,11 +7,11 @@ from pathlib import Path
 class BoxConfig:
     """A dataclass for box-configuration, that validates each provided argument."""
 
-    def __init__(self, user: str, memory: str, disk: str, playbook: str, copy: Optional[list[dict]], key_folder: Path) -> None:
+    def __init__(self, user: str, memory: str, disk: str, playbooks: list[str], copy: Optional[list[dict]], key_folder: Path) -> None:
         self.user = user
         self.memory = memory
         self.disk = disk
-        self.playbook = playbook
+        self.playbooks = playbooks
         self.copy = copy
         self.key_folder = key_folder
 
@@ -43,16 +43,23 @@ class BoxConfig:
         self._disk = value
 
     @property
-    def playbook(self):
-        return self._playbook
+    def playbooks(self):
+        return self._playbooks
 
-    @playbook.setter
-    def playbook(self, value):
+    @playbooks.setter
+    def playbooks(self, value):
         if value:
-            if not os.path.exists(value):
-                raise FileNotFoundError(f'file {value} does not exist')
+            if not isinstance(value, list):
+                raise ValueError('expected playbooks to be a list')
 
-            self._playbook = Path(value)
+            playbooks = []
+            for playbook in value:
+                if not os.path.exists(playbook):
+                    raise FileNotFoundError(f'file {playbook} does not exist')
+
+                playbooks.append(Path(playbook))
+
+            self._playbooks = playbooks
 
     @property
     def key_folder(self):

@@ -13,7 +13,7 @@ setup(
   packages=find_packages(),
   entry_points = {
     'console_scripts': {
-      'box=src.cli:main'
+      'box=box.main:main'
     }
   }
 )

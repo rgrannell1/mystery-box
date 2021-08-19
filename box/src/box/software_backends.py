@@ -52,7 +52,6 @@ class AnsibleConfiguration(VMConfigurator):
 
     def run(self) -> None:
         """Run an ansible playbook on the remote host."""
-        tgt = '/mystery-box-playbook.yaml'
         start_time = time.monotonic()
 
         # -- first, copy all required resources over.
@@ -60,17 +59,18 @@ class AnsibleConfiguration(VMConfigurator):
             for entry in self.cfg.copy:
                 scp.copy(self.cfg.key_folder, entry['src'], entry['dest'])
 
-            scp.copy(self.cfg.key_folder, self.cfg.playbook,
-                     Path(tgt))
+            for playbook in self.cfg.playbooks:
+                scp.copy(self.cfg.key_folder, playbook,
+                         Path(Path(playbook).name))
 
-            # -- use ssh to call ansible on the remote host, to configure its own host on localhost.
-            with SSH(user='root', ip=self.ip, cfg=self.cfg) as ssh:
-                ssh.run(self.cfg.key_folder,
-                    f'ansible-playbook -i "localhost, " -c local {tgt}')
+                # -- use ssh to call ansible on the remote host, to configure its own host on localhost.
+                with SSH(user='root', ip=self.ip, cfg=self.cfg) as ssh:
+                    ssh.run(self.cfg.key_folder,
+                        f'ansible-playbook -i "localhost, " -c local {Path(Path(playbook).name)}')
 
-                seconds_elapsed = round(time.monotonic() - start_time)
-                logging.info(
-                    f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
+            seconds_elapsed = round(time.monotonic() - start_time)
+            logging.info(
+                f'📦 devbox configured and ready to use at {self.ip} (+{seconds_elapsed}s)')
 
 
 class VMConfigurators():

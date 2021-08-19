@@ -30,7 +30,7 @@ Options:
 """
 
 from docopt import docopt
-from .box import hardware_backends
+from src.box import hardware_backends
 
 def main():
     """Call the correct CLI command"""
@@ -52,7 +52,6 @@ def main():
         vm.start()
     elif args['configure']:
         vm.configure(args['--playbook'])
-
 
 if __name__ == '__main__':
     main()

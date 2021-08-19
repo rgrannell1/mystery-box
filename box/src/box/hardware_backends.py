@@ -55,7 +55,7 @@ class DevBoxMultipass(DevBox):
 
     def configure(self, cfg: BoxConfig) -> None:
         """configure the multipass VM"""
-        if not cfg.playbook:
+        if not cfg.playbooks:
             return
 
         # -- configure via ansible, otherwise just exit.
@@ -98,7 +98,7 @@ class DevBoxMultipass(DevBox):
                     user=opts['user'],
                     memory=opts['memory'],
                     disk=opts['disk'],
-                    playbook=opts['playbook'],
+                    playbooks=opts['playbooks'],
                     copy=opts['copy'],
                     key_folder=opts['key_folder']
                 )
