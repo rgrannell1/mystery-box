@@ -9,6 +9,7 @@ Usage:
   box start
   box stop
   box delete
+  box ip
   box (-h|--help)
 
 Description:
@@ -55,6 +56,8 @@ def main():
         vm.configure(args['--playbook'])
     elif args['delete']:
         vm.delete()
+    elif args['ip']:
+        print(vm.ip())
 
 if __name__ == '__main__':
     main()
