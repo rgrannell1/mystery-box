@@ -56,7 +56,11 @@ class AnsibleConfiguration(VMConfigurator):
         # -- first, copy all required resources over.
         with SCP(user='root', ip=self.ip) as scp:
             for entry in self.cfg.copy:
-                scp.copy(self.cfg.key_folder, entry['src'], entry['dest'])
+                try:
+                    scp.copy(self.cfg.key_folder, entry['src'], entry['dest'])
+                except:
+                    raise IOError(
+                        f"failed copying {entry['src']} to {entry['dest']}")
 
             for playbook in self.cfg.playbooks:
                 scp.copy(self.cfg.key_folder, playbook,
