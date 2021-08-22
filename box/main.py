@@ -8,6 +8,7 @@ Usage:
   box configure [--playbook <str>]
   box start
   box stop
+  box delete
   box (-h|--help)
 
 Description:
@@ -52,6 +53,8 @@ def main():
         vm.start()
     elif args['configure']:
         vm.configure(args['--playbook'])
+    elif args['delete']:
+        vm.delete()
 
 if __name__ == '__main__':
     main()

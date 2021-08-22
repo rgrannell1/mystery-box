@@ -8,6 +8,7 @@ requirements = [
 
 setup(
   name="Mystery Box",
+  version="0.1",
   python_requires=">=3.9",
   install_requires=requirements,
   packages=find_packages(),

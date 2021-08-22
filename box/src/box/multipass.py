@@ -98,3 +98,20 @@ class Multipass:
 
         logging.error(f'vm {name} does not exist')
         exit(1)
+
+    @classmethod
+    def delete(cls, name: str):
+        """Delete vm by name"""
+
+        listed = Multipass.list()
+
+        if not any([list['name'] == name for list in listed]):
+            subprocess.run(['multipass', 'purge'])
+            return
+
+        try:
+            subprocess.run(['multipass', 'delete', name])
+            subprocess.run(['multipass', 'purge'])
+        except subprocess.CalledProcessError as err:
+            logging.error('Failed to delete VM through multipass')
+            exit(1)

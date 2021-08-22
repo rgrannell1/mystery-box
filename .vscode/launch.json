@@ -5,7 +5,7 @@
       "name": "Box Up",
       "type": "python",
       "request": "launch",
-      "program": "src/cli.py",
+      "program": "box/main.py",
       "console": "integratedTerminal",
       "args": ["up"]
     },
@@ -13,10 +13,20 @@
       "name": "Box In",
       "type": "python",
       "request": "launch",
-      "program": "src/cli.py",
+      "program": "box/main.py",
       "console": "integratedTerminal",
       "args": [
         "in"
+      ]
+    },
+    {
+      "name": "Box Delete",
+      "type": "python",
+      "request": "launch",
+      "program": "box/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "delete"
       ]
     }
   ]

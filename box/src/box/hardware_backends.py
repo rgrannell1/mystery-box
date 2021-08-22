@@ -171,6 +171,10 @@ class DevBoxMultipass(DevBox):
         """Start a multipass devbox"""
         Multipass.start(self.name)
 
+    def delete(self):
+        """Delete a multipass devbox"""
+        Multipass.delete(self.name)
+
 
 class DevBoxProvisioner():
     multipass = DevBoxMultipass
